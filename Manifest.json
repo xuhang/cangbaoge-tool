@@ -1,0 +1,33 @@
+{
+    "manifest_version": 2,
+    "name": "藏宝阁",
+    "version": "1.0.0.0",
+    "description": "藏宝阁Tools",
+    "browser_action": {
+        "default_icon": {
+            "19": "images/icon19.png",
+            "38": "images/icon38.png"
+        },
+        "default_title": "藏宝阁工具",
+        "default_popup": "popup.html"
+    },
+    "background": {
+        "scripts": ["./background.js"]
+    },
+    "content_scripts": [
+        {
+            "matches": ["https://www.baidu.com/*"],
+            "js": ["jquery-3.3.1.js", "js/baidu.js"]
+        },
+        {
+            "matches": ["http://xyq.cbg.163.com/*"],
+            "js": ["jquery-3.3.1.js", "js/cbg.js", "js/waitfor.js"]
+        }
+    ],
+    "permissions": [
+        "webRequest",
+        "webRequestBlocking",
+        "background",
+        "*://*.google.com/"
+    ]
+}
