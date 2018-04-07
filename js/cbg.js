@@ -119,23 +119,100 @@ function extract(){
 		// alert(i + " - " +attr);
 		
 		allTabs[i].click();
+
+		var tabId = allTabs[i].getAttribute('id');
+
+		alert(tabId);
 		
 		var tabTitle = allTabs[i].innerText;
-		var tables = document.querySelectorAll('#role_info_box div table');
-		values.push("========"+tabTitle+"========");
-		// alert('---');
-		for (var j = 0; j < tables.length; j++) {
-			var t = expandTable(tables[j]);
-			values.push(JSON.stringify(t));
-		}
-		// alert('===');
-		// var t = document.querySelectorAll('#role_info_box div h4');
-		// values.push(tabTitle + " - " +t[0].innerText);
+
+		if('role_basic' == tabId){//人物/修炼
+			var tables = document.querySelectorAll('#role_info_box div table');
+			/*
+			tables[0]: 人物状态
+			tables[1]: 输出/抗性
+			tables[2]: 角色修炼及宠修1
+			tables[3]: 角色修炼及宠修2
+			tables[4]: 房屋信息
+			tables[5]: 积分 其他
+			*/
+			var role_status = expandTable(tables[0], 1);
+			var role_resistance = expandTable(tables[1], 0);
+			var role_pet_1 = expandTable(tables[2], 0);
+			var role_pet_2 = expandTable(tables[3], 0);
+			var role_house = expandTable(tables[4], 0);
+			var role_score = expandTable(tables[5], 0);
+
+			var role_basic = {
+				'role_status': role_status,
+				'role_resistance': role_resistance,
+				'role_pet_1': role_pet_1,
+				'role_pet_2': role_pet_2,
+				'role_house': role_house,
+				'role_score': role_score,
+			};			
+
+			//console.log(JSON.stringify(role_basic));
+		}else if('role_skill' == tabId){//技能
+			var skills = document.querySelectorAll('#role_info_box div div.skill ul li');
+			var master_skill = {};
+			for(var o=0; o<skills.length; o++){
+				if(skills[o].querySelector('h5') && skills[o].querySelector('p')){
+					var skill_name = skills[o].querySelector('h5').innerText;
+					var skill_level = skills[o].querySelector('p').innerText;
+					master_skill[skill_name] = skill_level;
+				}
+			}
+
+			var tables = document.querySelectorAll('#role_info_box div table.skillTb');
+
+			var life_skill = {};
+			var t1_skills = tables[0].querySelectorAll('tr td');
+			for(var m=0; m<t1_skills.length; m++){
+				if(t1_skills[m].querySelector('h5') && t1_skills[m].querySelector('p')){
+					var skill_name = t1_skills[m].querySelector('h5').innerText;
+					var skill_level = t1_skills[m].querySelector('p').innerText;
+					life_skill[skill_name] = skill_level;
+				}
+			}
+
+			var plot_skill = {};
+			var t2_skills = tables[1].querySelectorAll('tr td');
+			for(var m=0; m<t2_skills.length; m++){
+				if(t2_skills[m].querySelector('h5') && t2_skills[m].querySelector('p')){
+					var skill_name = t2_skills[m].querySelector('h5').innerText;
+					var skill_level = t2_skills[m].querySelector('p').innerText;
+					plot_skill[skill_name] = skill_level;
+				}
+			}
+
+			var role_skill = {
+				"master_skill": master_skill,
+				"life_skill": life_skill,
+				"plot_skill": plot_skill
+			};
+			
+		}else if('role_equips' == tabId){//道具/法宝
+		}else if('role_pets' == tabId){//召唤兽/孩子
+		}else if('role_riders' == tabId){//坐骑
+		}else if('role_clothes' == tabId){//锦衣
+			var tables = document.querySelectorAll('#role_info_box div table');
+			var clothes_color = expandTable(tables[0], 0);
+			var clothes_tools = expandTable(tables[1], 0);
+
+			var role_clothes = {
+				"clothes_color": clothes_color,
+				"clothes_tools": clothes_tools
+			};
+
+			alert(JSON.stringify(role_clothes));
+		} 
+
 		if(i == allTabs.length - 1){
 			// alert(values);
 			window.opener.window.returnValue = values;
 			// console.log(values);
-			parent.window.close();
+			//parent.window.close();
 		}
 	}
 	// alert(values);
@@ -188,13 +265,29 @@ function regListener(action, handler){
 }
 
 
-function expandTable(table){
+function expandTable(table, tp){
+	//tp = 1 [] 
+	//tp = 0 {}
 	var rows = table.querySelectorAll('tr');
-	var t = {};
+	var t;
+	if(tp == 1){
+		t = [];
+	}else{
+		t = {};
+	}
 	for (var i = 0; i < rows.length; i++) {
 		var dc = rows[i].children;
-		if(dc.length == 2){
-			t[dc[0].innerText] = dc[1].innerText;
+		if(tp == 0){
+			if(dc.length % 2 == 0){
+				for(var j=0; j<dc.length/2; j++){
+					t[dc[j*2].innerText.replace('：', '')] = dc[j*2 + 1].innerText.replace('：', '');
+				}
+			
+			}
+		}else{
+			for(var k=0; k<dc.length; k++){
+				t.push(dc[k].innerText.replace('：', ':'));
+			}
 		}
 	}
 	return t;
