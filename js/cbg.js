@@ -21,7 +21,11 @@ $(function(){
 		calculate();
 	}else if(location.indexOf('equip') > 0 && location.indexOf('eid') > 0){
 		//提取
-		extract();
+		extract(function(){
+			document.querySelector('#btn_buy').click();
+		});
+	}else if(location.indexOf('usertrade') > 0 && location.indexOf('orderid') > 0){
+		buy();
 	}
 });
 
@@ -98,7 +102,7 @@ function winsclosed(){
 }
 
 
-function extract(){
+function extract(next){
 	var values = [];
 	
 	var infoItems = document.querySelectorAll('#info_panel ul li');
@@ -136,18 +140,26 @@ function extract(){
 			tables[4]: 房屋信息
 			tables[5]: 积分 其他
 			*/
-			var role_status = expandTable(tables[0], 1, ['级别','获得经验','新版乾元丹数量','成就点数','总经验','飞升/渡劫/化圣']);
+			var role_st = expandTable(tables[0], 1, ['级别','获得经验','新版乾元丹数量','成就点数','总经验','飞升/渡劫/化圣']);
+			var role_status = {};
+			for(var r=0; r<role_st.length; r++){
+				var rr = role_st[r].split(':');
+				role_status[rr[0]] = rr[1];
+			}
 			// var role_resistance = expandTable(tables[1], 0);
 			var role_pet_1 = expandTable(tables[2], 0);
 			var role_pet_2 = expandTable(tables[3], 0);
+
+			for(var rp in role_pet_2){
+				role_pet_1[rp] = role_pet_2[rp];
+			}
 			// var role_house = expandTable(tables[4], 0);
 			// var role_score = expandTable(tables[5], 0);
 
 			var role_basic = {
 				'role_status': role_status,
 				// 'role_resistance': role_resistance,
-				'role_pet_1': role_pet_1,
-				'role_pet_2': role_pet_2
+				'role_pet': role_pet_1
 			};			
 
 			// alert(JSON.stringify(role_basic));
@@ -192,9 +204,9 @@ function extract(){
 				"life_skill": life_skill,
 				"skill_masted": skill_masted
 			};
-			alert(JSON.stringify(role_skill));
+			// alert(JSON.stringify(role_skill));
 		}else if('role_equips' == tabId){//道具/法宝
-			/*var tables = document.querySelectorAll('#role_info_box table.tb03');
+			var tables = document.querySelectorAll('#role_info_box table.tb03');
 			var props = [];
 			for(var x=0; x<4; x++){
 				var items = tables[x].querySelectorAll('tr td img');
@@ -230,10 +242,10 @@ function extract(){
 					props.push(desc_list);
 				}
 			}
-			alert(JSON.stringify(props));
+			// alert(JSON.stringify(props));
 			var tables2 = document.querySelectorAll('#role_info_box table.tb02');
 			var info = expandTable(tables2[0], 0);
-			var info2 = expandTable(tables2[1], 0);*/
+			var info2 = expandTable(tables2[1], 0);
 			// alert(JSON.stringify(info));
 			// alert(JSON.stringify(info2));
 		}else if('role_pets' == tabId){//召唤兽/孩子
@@ -251,18 +263,18 @@ function extract(){
 			}
 
 			//召唤兽-装备
-			var child_equips = document.querySelectorAll('#RolePetEquips tr td img');
+			var child_equips = document.querySelectorAll('#RolePetEquips tr td > img');
 			var child_equip = [];
 			for(var e=0;e<child_equips.length; e++){
 				var equip = getDesc(child_equips[e].getAttribute('data_equip_desc'), child_equips[e].getAttribute('data_equip_type_desc'), ['等级', '伤害', '耐力', '套装效果', '镶嵌效果', '灵力', '修理失败', '特效']);
 				child_equip.push(equip);
 			}
 
-			alert(JSON.stringify(child_equip));
+			// alert(JSON.stringify(child_equip));
 		}else if('role_riders' == tabId){//坐骑
 			var tb = document.querySelector('#RoleXiangRui');
 			var xiangrui = expandTable(tb, 0);
-			alert(JSON.stringify(xiangrui));
+			// alert(JSON.stringify(xiangrui));
 		}else if('role_clothes' == tabId){//锦衣
 			var tables = document.querySelectorAll('#role_info_box div table');
 			var clothes_color = expandTable(tables[0], 0);
@@ -273,7 +285,7 @@ function extract(){
 				"clothes_tools": clothes_tools
 			};
 
-			alert(JSON.stringify(role_clothes));
+			// alert(JSON.stringify(role_clothes));
 		} 
 
 		if(i == allTabs.length - 1){
@@ -287,6 +299,25 @@ function extract(){
 	/*sendNotice('open', '1', function(resp){
 		alert('open ' + resp);
 	});*/
+	next();
+}
+
+function buy(){
+	var blc = document.querySelector('#pay_detail > div:nth-child(2) > label > strong');
+	var tpr = document.querySelector('#pay_detail > div.textRight.f14px > div > strong');
+	var re_blc = /￥(\d+.?\d+)/;
+	var e = re_blc.exec(blc);
+	var balance = parseFloat(e[1]);
+	e = re_blc.exec(tpr);
+	var tot_price = parseFloat(e[1]);
+	if(balance >= tot_price){
+		//pagInCurPage();
+	}else{
+		var btns = document.querySelectorAll('a.btn1');
+		if(btns[btns.length - 1].innerText.indexOf('立即支付') >= 0){
+			btns[btns.length - 1].click();
+		}
+	}
 	
 }
 
@@ -380,9 +411,18 @@ function expandTable(table, tp, filters){
 
 function getDesc(desc, type_desc, filters){
 	var d = [];
-	var d1 = desc.split('#r');
-	var d2 = type_desc.split('#r');
-	var c = d1.concat(d2);
+	if(desc){
+		var d1 = desc.split('#r');
+	}
+	if(type_desc){
+		var d2 = type_desc.split('#r');
+	}
+	if(d1){
+		var c = d1.concat(d2);
+	}else{
+		var c = d2;
+	}
+	
 	if(filters){
 		for(var k=0; k<c.length; k++){
 			for(var j=0; j<filters.length; j++){

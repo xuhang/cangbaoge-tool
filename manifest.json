@@ -22,12 +22,17 @@
         {
             "matches": ["http://xyq.cbg.163.com/*"],
             "js": ["jquery-3.3.1.js", "js/cbg.js", "js/waitfor.js"]
+        },
+        {
+            "matches": ["https://epay.163.com/*"],
+            "js": ["jquery-3.3.1.js", "js/pay.js"]
         }
     ],
     "permissions": [
         "webRequest",
         "webRequestBlocking",
         "background",
-        "*://*.google.com/"
+        "*://*.google.com/",
+        "*://*.netease.com/"
     ]
 }
