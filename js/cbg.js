@@ -10,7 +10,7 @@ $(function(){
 	);
 	var location = window.location.href;
 
-	if('http://xyq.cbg.163.com/' == location){
+	/*if('http://xyq.cbg.163.com/' == location){
 		//首页
 		init();
 	}else if(location.indexOf('xyq_overall_search') > 0 && location.indexOf('show_search_role_form') > 0){
@@ -19,15 +19,37 @@ $(function(){
 	}else if(location.indexOf('xyq_overall_search') > 0 && location.indexOf('show_search_role_form') < 0){
 		//计算
 		calculate();
-	}else if(location.indexOf('equip') > 0 && location.indexOf('eid') > 0){
+	}else */
+	if(location.indexOf('equip') > 0 && location.indexOf('eid') > 0){
 		//提取
-		extract(function(){
+		/*extract(function(){
+			//下单购买
 			document.querySelector('#btn_buy').click();
-		});
+
+			setInterval("continue_buy()", 100);
+			
+		});*/
+		//下单购买
+		if(document.querySelector('#btn_buy')){
+			document.querySelector('#btn_buy').click();
+		}else{
+			document.querySelector('#buy_btn').click();
+		}
+		
+		ctn_buy = setInterval("continue_buy()", 300);
 	}else if(location.indexOf('usertrade') > 0 && location.indexOf('orderid') > 0){
 		buy();
+	}else if(location.indexOf('paynotify') > 0 && location.indexOf('verify_pay_result') > 0){
+		callback();
 	}
 });
+
+function continue_buy(){
+	if(document.querySelector('.has_crossorder_modal').style['display'] == 'block'){
+		document.querySelector('#continuteBuy').click();
+		clearInterval(ctn_buy);
+	}
+}
 
 function init(){
 	var links = document.getElementsByTagName('a');
@@ -302,25 +324,70 @@ function extract(next){
 	next();
 }
 
-function buy(){
-	var blc = document.querySelector('#pay_detail > div:nth-child(2) > label > strong');
-	var tpr = document.querySelector('#pay_detail > div.textRight.f14px > div > strong');
-	var re_blc = /￥(\d+.?\d+)/;
-	var e = re_blc.exec(blc);
-	var balance = parseFloat(e[1]);
-	e = re_blc.exec(tpr);
-	var tot_price = parseFloat(e[1]);
-	if(balance >= tot_price){
-		//pagInCurPage();
-	}else{
-		var btns = document.querySelectorAll('a.btn1');
-		if(btns[btns.length - 1].innerText.indexOf('立即支付') >= 0){
-			btns[btns.length - 1].click();
+function commit_order(){
+	jQuery.ajax({
+		url: baseurl + 'code/getcode.action?a='+tot_price,
+		success: function(code){
+			// var code = JSON.parse(resp);
+			if(code['amount'] == tot_price){
+				clearInterval(cmt);
+				//页面内购买-填写验证码
+				document.querySelector('#sms_code').value = code['code'];
+				if(document.querySelector('#sms_code').value == code['code']){
+					//确认购买
+					document.querySelector('#confirm_pay').click();
+				}
+			}
 		}
-	}
-	
+	});
 }
 
+function buy(){
+	var process = document.querySelectorAll('#process_chart > table tr td.finish');
+	var proContent = process[process.length-1].querySelector('div p').innerText;
+	if('订单提交' == proContent){
+		var blc = document.querySelector('#pay_detail > div:nth-child(2) > label > strong').innerText;
+		var tpr = document.querySelector('#pay_detail > div.textRight.f14px > div > strong').innerText;
+		var re_blc = /￥(\d+.?\d+)/;
+		var e = re_blc.exec(blc);
+		var balance = e[1]; //余额
+		e = re_blc.exec(tpr);
+		tot_price = e[1]; //总价
+
+		var btns = document.querySelectorAll('a.btn1');
+		for(var i=0; i<btns.length; i++){
+			if(btns[i].innerText.indexOf('立即支付') >= 0){
+				btns[i].click();
+				break;
+			}
+		}
+
+		if(balance >= tot_price){
+			//页面内购买-发送短信
+			document.querySelector('#btn_get_sms_code').click();
+			cmt = setInterval('commit_order()', 300);
+		}
+	}	
+}
+
+function callback(){
+	var info = document.querySelector('body > div.subArea.area > div:nth-child(2) > div.blockCont > div > div.hasLayout > div > h4').innerText;
+	if(info.indexOf('成功') >= 0){
+		jQuery.ajax({
+			url: baseurl + 'code/payresult.action?r=0',
+			success: function(resp){
+				window.close();
+			}
+		});
+	}else{
+		jQuery.ajax({
+			url: baseurl + 'code/payresult.action?r=1',
+			success: function(resp){
+				window.close();
+			}
+		});
+	}
+}
 
 function waitForElementToDisplay(selector, time, handler) {
         if(document.querySelector(selector)!=null) {

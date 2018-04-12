@@ -1,24 +1,41 @@
 $(function(){
 	var location = window.location.href;
 	if(location.indexOf('standardCashier') > 0 && location.indexOf('orderId') > 0){
-		var getCodeBtn = document.querySelector('#bankSmsCodeBox > a.verifyCodeBtn');
-		if(getCodeBtn.innerText == '获取验证码'){
-			getCodeBtn.click();
-		}
+		waitForElementToDisplay('.verifyCodeBtn', 50, function(){
+			getCodeBtn = document.querySelector('#bankSmsCodeBox > a.verifyCodeBtn');
+			if(getCodeBtn.innerText == '获取验证码'){
+				setTimeout('getCodeBtn.click();', 300);
+				
+			}
+			
+		});
 		waitForElementToDisplay('#activeBtn', 50, function(){
-			timer = setInterval("setAuthCode()", 50);
+			timer = setInterval("setAuthCode()", 300);
 		});
 	}
 });
 
 function setAuthCode(){
+	var amt = document.querySelector('#productPrice').innerText;
 	jQuery.ajax({
-		url: 'https://mam.netease.com/beacons/resources',
-		success: function(resp){
-			clearInterval(timer);
-			document.querySelector('#orderIdInput').value = resp;
-			document.querySelector('#bankSmsCode').value = 552748;
-			document.querySelector('#activeBtn').click();
+		url: baseurl + 'code/getcode.action?a='+amt,
+		dataType: 'json',
+       		crossDomain: true,
+		success: function(code){
+			console.log(code);
+			// var code = JSON.parse(resp);
+			// console.log('======='+code['amount'] == amt+'=======')
+			if(code['amount'] == amt){
+				clearInterval(timer);
+				// document.querySelector('#orderIdInput').value = resp;
+				document.querySelector('#bankSmsCode').value = code['code'];
+				if(document.querySelector('#bankSmsCode').value == code['code']){
+					document.querySelector('#activeBtn').click();
+				}
+
+				// document.querySelector('#activeBtn').click();
+			}
+			
 		}
 	});
 }
